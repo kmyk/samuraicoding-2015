@@ -85,8 +85,8 @@ const int D_WEST  = 3;
 // action
 const int A_ATTACK = 1; // + direction
 const int A_MOVE   = 5; // + direction
-const int A_APPEAR = 9;
-const int A_HIDE  = 10;
+const int A_HIDE   = 9;
+const int A_APPEAR = 10;
 const int ACTION_COST[] = { -1,  4, 4, 4, 4,  2, 2, 2, 2,  1, 1 };
 bool is_action_attack(int a);
 bool is_action_move(int a);
