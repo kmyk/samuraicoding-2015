@@ -99,7 +99,8 @@ action_plan_t player::play(turn_info_t const & a_tinfo) {
     if (total_cost(plan) < 7 and true) { // TODO: check whether it's possible or not
         plan.a.push_back(A_HIDE);
     }
-    if (highscore < 130) {
+    cerr << "score: " << highscore << endl;
+    if (highscore < 170) {
         // there are no enough space, goto center (heuristic)
         int score[DIRECTION_NUM] = {};
         repeat_from (dy,-7,7+1) repeat_from (dx,-7,7+1) {
@@ -153,7 +154,7 @@ int player::evaluate(action_plan_t const & plan) {
                         if (q == ginfo.home[FRIEND_NUM + j]) {
                             score += 80;
                         } else {
-                            score += 2000;
+                            score += 20000;
                         }
                     }
                 }
@@ -172,10 +173,10 @@ int player::evaluate(action_plan_t const & plan) {
         }
     }
     if (total_cost(plan) < 7 and is_field_friend(f[p.y][p.x])) {
-        score += 50;
+        score += 30;
     }
     if (is_dangerous[p.y][p.x]) {
-        score -= 1000;
+        score -= 15000;
     }
     return score;
 }
