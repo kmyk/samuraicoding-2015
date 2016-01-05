@@ -188,3 +188,40 @@ bool is_valid_plan(action_plan_t const & plan, game_info_t const & ginfo, turn_i
     }
     return true;
 }
+
+void debug_print(point_t const & p, vector<vector<int> > const & f, game_info_t const & ginfo, turn_info_t const & tinfo) {
+    repeat (y,ginfo.height) {
+        repeat (x,ginfo.width) {
+            point_t q = { y, x };
+            string s = "\x1b[";
+            if (q == p) {
+                s += '4';
+                s += '1' + ginfo.weapon;
+                s += "m@";
+                goto next;
+            }
+            repeat (i,SAMURAI_NUM) {
+                if (q == tinfo.pos[i]) {
+                    s += '4';
+                    s += '1' + i;
+                    s += 'm';
+                    s += 'A' + i;
+                    goto next;
+                }
+            }
+            s += '3';
+            if (f[y][x] == F_UNKNOWN) {
+                s += '0';
+            } else if (f[y][x] == F_FREE) {
+                s += '7';
+            } else {
+                s += '1' + f[y][x];
+            }
+            s += 'm';
+            s += '0' + f[y][x];
+next:;
+            cerr << s << "\x1b[0m";
+        }
+        cerr << endl;
+    }
+}

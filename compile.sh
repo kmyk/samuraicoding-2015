@@ -1,2 +1,5 @@
 #!/bin/sh
-exec g++ -std=c++14 -Wall -g -fsanitize=undefined -DDEBUG -D_GLIBCXX_DEBUG a.cpp samurai.cpp
+DEBUG_OPTIONS="-g -fsanitize=undefined -DDEBUG -D_GLIBCXX_DEBUG"
+RELEASE_OPTIONS="-O3 -DNDEBUG"
+g++ -std=c++11 -Wall   $DEBUG_OPTIONS a.cpp samurai.cpp || \
+g++ -std=c++11 -Wall $RELEASE_OPTIONS a.cpp samurai.cpp

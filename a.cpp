@@ -8,6 +8,7 @@ using namespace std;
 
 class player {
     game_info_t ginfo;
+    vector<turn_info_t> tinfos;
     turn_info_t tinfo;
     default_random_engine engine;
 
@@ -32,20 +33,25 @@ player::player(game_info_t const & ginfo) : ginfo(ginfo) {
     engine.seed(device());
 
     tinfo = {};
+    tinfo.turn = -1;
     field.resize(h(), vector<int>(w(), F_UNKNOWN));
 }
 
 void player::update() {
     repeat (y,h()) {
         repeat (x,w()) {
+            if (tinfo.field[y][x] == F_UNKNOWN) continue;
             field[y][x] = tinfo.field[y][x];
         }
     }
 }
 
 action_plan_t player::play(turn_info_t const & a_tinfo) {
+    if (tinfo.turn != -1) tinfos.push_back(tinfo);
     tinfo = a_tinfo;
     update();
+
+    debug_print(pos(), field, ginfo, tinfo);
 
     action_plan_t plan;
     if (tinfo.cure) return plan;
@@ -54,22 +60,6 @@ action_plan_t player::play(turn_info_t const & a_tinfo) {
     // greedy
     int highscore = 0;
     action_plan_t t;
-// cerr << "--- turn " << tinfo.turn << endl;
-// repeat (y,h()) {
-//     repeat (x,w()) {
-//         bool done = false;
-//         repeat (i,SAMURAI_NUM) {
-//             if ((point_t){y,x} == tinfo.pos[i]) {
-//                 cerr << char('A' + i);
-//                 done = true;
-//             }
-//         }
-//         if (done) continue;
-//         cerr << char(field[y][x] == weapon() ? '#' : '0' + field[y][x]);
-//     }
-//     cerr << endl;
-// }
-// cerr << "---" << endl;
     if (state() == S_HIDDEN) {
         t.a.push_back(A_APPEAR);
     }
@@ -127,25 +117,6 @@ int player::evaluate(action_plan_t const & plan) {
             p += direction[a - A_MOVE];
         }
     }
-// cerr << "--- " << score << endl;
-// repeat (y,h()) {
-//     repeat (x,w()) {
-//         bool done = false;
-//         if ((point_t){y,x} == p) {
-//             cerr << char('@');
-//             done = true;
-//         } else repeat (i,SAMURAI_NUM) {
-//             if (i != weapon() and (point_t){y,x} == tinfo.pos[i]) {
-//                 cerr << char('A' + i);
-//                 done = true;
-//             }
-//         }
-//         if (done) continue;
-//         cerr << char(f[y][x] == weapon() ? '#' : '0' + f[y][x]);
-//     }
-//     cerr << endl;
-// }
-// cerr << "---" << endl;
     return score;
 }
 

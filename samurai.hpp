@@ -109,3 +109,6 @@ std::ostream & operator << (std::ostream & out, action_plan_t & plan);
 int total_cost(action_plan_t const & plan);
 point_t total_move(action_plan_t const & plan);
 bool is_valid_plan(action_plan_t const & plan, game_info_t const & ginfo, turn_info_t const & tinfo);
+
+
+void debug_print(point_t const & p, std::vector<std::vector<int> > const & field, game_info_t const & ginfo, turn_info_t const & tinfo);
