@@ -99,6 +99,42 @@ action_plan_t player::play(turn_info_t const & a_tinfo) {
     if (total_cost(plan) < 7 and true) { // TODO: check whether it's possible or not
         plan.a.push_back(A_HIDE);
     }
+    if (highscore < 130) {
+        // there are no enough space, goto center (heuristic)
+        int score[DIRECTION_NUM] = {};
+        repeat_from (dy,-7,7+1) repeat_from (dx,-7,7+1) {
+            point_t p = pos() + (point_t){ dy, dx };
+            if (not is_on_field(p, ginfo)) continue;
+            if (not is_field_friend(field[p.y][p.x])) {
+                if (dy < 0) score[D_SOUTH] += 1;
+                if (dy > 0) score[D_NORTH] += 1;
+                if (dx < 0) score[D_WEST] += 1;
+                if (dx > 0) score[D_EAST] += 1;
+            }
+        }
+        highscore = -1; // shadowing
+        int j = -1;
+        repeat (i,DIRECTION_NUM) {
+            if (highscore < score[i]) {
+                highscore = score[i];
+                j = i;
+            }
+        }
+        plan.a.clear();
+        plan.a.push_back(A_MOVE + j);
+        plan.a.push_back(A_MOVE + j);
+        plan.a.push_back(A_MOVE + j);
+        if (state() == S_HIDDEN) {
+            if (not is_valid_plan(plan, ginfo, tinfo)) {
+                plan.a.clear();
+                plan.a.push_back(A_APPEAR);
+                plan.a.push_back(A_MOVE + j);
+                plan.a.push_back(A_MOVE + j);
+                plan.a.push_back(A_MOVE + j);
+            }
+        }
+        plan.a.push_back(A_HIDE);
+    }
     return plan;
 }
 
@@ -134,6 +170,9 @@ int player::evaluate(action_plan_t const & plan) {
         } else if (is_action_move(a)) {
             p += direction[a - A_MOVE];
         }
+    }
+    if (total_cost(plan) < 7 and is_field_friend(f[p.y][p.x])) {
+        score += 50;
     }
     if (is_dangerous[p.y][p.x]) {
         score -= 1000;
