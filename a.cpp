@@ -10,6 +10,8 @@ class player {
     game_info_t ginfo;
     vector<turn_info_t> tinfos;
     turn_info_t tinfo;
+    vector<vector<int> > field;
+    vector<vector<bool> > is_dangerous;
     default_random_engine engine;
 
     int weapon() const { return ginfo.weapon; }
@@ -17,7 +19,6 @@ class player {
     int w() const { return ginfo.width; }
     int state() const { return tinfo.state[ginfo.weapon]; }
     point_t pos() const { return tinfo.pos[ginfo.weapon]; }
-    vector<vector<int> > field;
 
 private:
     void update();
@@ -42,6 +43,23 @@ void player::update() {
         repeat (x,w()) {
             if (tinfo.field[y][x] == F_UNKNOWN) continue;
             field[y][x] = tinfo.field[y][x];
+        }
+    }
+
+    is_dangerous.clear();
+    is_dangerous.resize(h(), vector<bool>(w()));
+    repeat (i,ENEMY_NUM) {
+        if (tinfo.state[i] == S_ELIMINATED) continue;
+        point_t p = tinfo.pos[FRIEND_NUM + i];
+        if (not is_on_field(p, ginfo)) continue;
+        repeat (j,DIRECTION_NUM + 1) {
+            repeat (k,DIRECTION_NUM) {
+                repeat (l,ATTACK_AREA_NUM[i]) {
+                    point_t q = p + direction[j] + rotdir(ATTACK_AREA[i][l], k);
+                    if (not is_on_field(q, ginfo)) continue;
+                    is_dangerous[q.y][q.x] = true;
+                }
+            }
         }
     }
 }
@@ -97,9 +115,9 @@ int player::evaluate(action_plan_t const & plan) {
                 repeat (j,ENEMY_NUM) {
                     if (q == tinfo.pos[FRIEND_NUM + j]) {
                         if (q == ginfo.home[FRIEND_NUM + j]) {
-                            score += 70;
+                            score += 80;
                         } else {
-                            score += 1000;
+                            score += 2000;
                         }
                     }
                 }
@@ -116,6 +134,9 @@ int player::evaluate(action_plan_t const & plan) {
         } else if (is_action_move(a)) {
             p += direction[a - A_MOVE];
         }
+    }
+    if (is_dangerous[p.y][p.x]) {
+        score -= 1000;
     }
     return score;
 }

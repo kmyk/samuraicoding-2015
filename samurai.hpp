@@ -36,7 +36,7 @@ point_t & operator += (point_t & a, point_t const & b);
 point_t & operator -= (point_t & a, point_t const & b);
 point_t operator + (point_t const & a, point_t const & b);
 point_t operator - (point_t const & a, point_t const & b);
-const point_t direction[] = { { 1, 0 }, { 0, 1 }, { -1, 0 }, { 0, -1 } };
+const point_t direction[] = { {1,0}, {0,1}, {-1,0}, {0,-1}, {0,0} };
 point_t rotdeg(point_t const & a, int degree);
 point_t rotdir(point_t const & a, int direction);
 const int DIRECTION_NUM = 4;
