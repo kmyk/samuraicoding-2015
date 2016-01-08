@@ -221,9 +221,6 @@ action_plan_t player::play(turn_info_t const & a_tinfo) {
         }
         if (i < DIRECTION_NUM) t.a.pop_back();
     }
-    if (total_cost(plan) < 7 and true) { // TODO: check whether it's possible or not
-        plan.a.push_back(A_HIDE);
-    }
     cerr << "score: " << highscore << endl;
     if (highscore < 170) {
         // there are no enough space, goto center (heuristic)
@@ -259,7 +256,13 @@ action_plan_t player::play(turn_info_t const & a_tinfo) {
                 plan.a.push_back(A_MOVE + j);
             }
         }
-        plan.a.push_back(A_HIDE);
+        while (not is_valid_plan(plan, ginfo, tinfo)) {
+            plan.a.pop_back();
+        }
+    }
+    plan.a.push_back(A_HIDE);
+    while (not is_valid_plan(plan, ginfo, tinfo)) {
+        plan.a.pop_back();
     }
     return plan;
 }
@@ -328,7 +331,7 @@ int main() {
         if (not cin) break;
         clog << "# make a decision" << endl;
         action_plan_t plan = p.play(tinfo);
-        // assert (is_valid_plan(plan, ginfo, tinfo));
+        assert (is_valid_plan(plan, ginfo, tinfo));
         clog << "# done" << endl;
         cout << plan << endl;
         clog << plan << endl;
