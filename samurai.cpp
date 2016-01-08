@@ -29,6 +29,9 @@ bool operator == (point_t const & a, point_t const & b) {
 bool operator != (point_t const & a, point_t const & b) {
     return not (a == b);
 }
+bool operator < (point_t const & a, point_t const & b) {
+    return make_pair(a.y,a.x) < make_pair(b.y,b.x);
+}
 point_t & operator += (point_t & a, point_t const & b) {
     a.y += b.y;
     a.x += b.x;
@@ -59,6 +62,10 @@ point_t rotdeg(point_t const & p, int degree) {
 point_t rotdir(point_t const & p, int direction) {
     assert (0 <= direction and direction < DIRECTION_NUM);
     return rotdeg(p, direction * 90);
+}
+int manhattan_distance(point_t const & a, point_t const & b) {
+    point_t c = a - b;
+    return abs(c.y) + abs(c.x);
 }
 
 istream & operator >> (istream & in, game_info_t & ginfo) {

@@ -23,6 +23,7 @@
 #define dump(x)  cerr << #x << " = " << (x) << endl
 #define debug(x) cerr << #x << " = " << (x) << " (L" << __LINE__ << ")" << " " << __FILE__ << endl
 typedef long long ll;
+const double eps = 1e-6;
 
 int getint(std::istream & in); // without comment
 
@@ -32,6 +33,7 @@ struct point_t {
 std::istream & operator >> (std::istream & in, point_t & p);
 bool operator == (point_t const & a, point_t const & b);
 bool operator != (point_t const & a, point_t const & b);
+bool operator < (point_t const & a, point_t const & b);
 point_t & operator += (point_t & a, point_t const & b);
 point_t & operator -= (point_t & a, point_t const & b);
 point_t operator + (point_t const & a, point_t const & b);
@@ -39,6 +41,7 @@ point_t operator - (point_t const & a, point_t const & b);
 const point_t direction[] = { {1,0}, {0,1}, {-1,0}, {0,-1}, {0,0} };
 point_t rotdeg(point_t const & a, int degree);
 point_t rotdir(point_t const & a, int direction);
+int manhattan_distance(point_t const & a, point_t const & b);
 const int DIRECTION_NUM = 4;
 
 const int SAMURAI_NUM = 6;
@@ -112,3 +115,7 @@ bool is_valid_plan(action_plan_t const & plan, game_info_t const & ginfo, turn_i
 
 
 void debug_print(point_t const & p, std::vector<std::vector<int> > const & field, game_info_t const & ginfo, turn_info_t const & tinfo);
+
+// サムライが行動する順序は以下の 12 ターンの繰り返しとする。
+// A0 B0 B1 A1 A2 B2 B0 A0 A1 B1 B2 A2
+const int TURNS[] = { 0,3,4,1,2,5, 3,0,1,4,5,2 };
