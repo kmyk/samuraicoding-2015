@@ -200,6 +200,9 @@ void debug_print(point_t const & p, vector<vector<int> > const & f, game_info_t 
     repeat (y,ginfo.height) {
         repeat (x,ginfo.width) {
             point_t q = { y, x };
+            if (tinfo.field[y][x] == F_UNKNOWN) {
+                cerr << "\x1b[40m";
+            }
             string s = "\x1b[";
             if (q == p) {
                 s += '4';
