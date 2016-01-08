@@ -3,6 +3,7 @@
  * @author Kimiyuki Onaka
  * @date Tue. 05, 2016
  */
+// http://samuraicoding.info/ruledetails-1116-jp.pdf
 #pragma once
 #include <iostream>
 #include <vector>
@@ -71,7 +72,7 @@ bool is_field_enemy(int f);
 bool is_on_field(point_t const & p, game_info_t const & ginfo); 
 
 struct turn_info_t {
-    int turn;
+    int turn; // ターンは 0 から番号付けされ、総ターン数未満である。
     int cure;
     point_t pos[6];
     int state[6];
@@ -112,10 +113,13 @@ std::ostream & operator << (std::ostream & out, action_plan_t & plan);
 int total_cost(action_plan_t const & plan);
 point_t total_move(action_plan_t const & plan);
 bool is_valid_plan(action_plan_t const & plan, game_info_t const & ginfo, turn_info_t const & tinfo);
+std::vector<std::vector<int> > simulate_plan(action_plan_t const & plan, std::vector<std::vector<int> > f, point_t p, game_info_t const & ginfo);
 
 
 void debug_print(point_t const & p, std::vector<std::vector<int> > const & field, game_info_t const & ginfo, turn_info_t const & tinfo);
 
 // サムライが行動する順序は以下の 12 ターンの繰り返しとする。
 // A0 B0 B1 A1 A2 B2 B0 A0 A1 B1 B2 A2
-const int TURNS[] = { 0,3,4,1,2,5, 3,0,1,4,5,2 };
+const int TURN_CYCLE = 12;
+const int TURNS[TURN_CYCLE] = { 0,3,4,1,2,5, 3,0,1,4,5,2 };
+std::array<int,ENEMY_NUM> turns_to_next(turn_info_t const & tinfo);

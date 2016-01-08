@@ -196,6 +196,21 @@ bool is_valid_plan(action_plan_t const & plan, game_info_t const & ginfo, turn_i
     return true;
 }
 
+vector<vector<int> > simulate_plan(action_plan_t const & plan, vector<vector<int> > f, point_t p, game_info_t const & ginfo) {
+    for (int a : plan.a) {
+        if (is_action_attack(a)) {
+            repeat (i, ATTACK_AREA_NUM[ginfo.weapon]) {
+                point_t q = p + rotdir(ATTACK_AREA[ginfo.weapon][i], a - A_ATTACK);
+                if (not is_on_field(q, ginfo)) continue;
+                f[q.y][q.x] = F_OCCUPIED + ginfo.weapon;
+            }
+        } else if (is_action_move(a)) {
+            p += direction[a - A_MOVE];
+        }
+    }
+    return f;
+}
+
 void debug_print(point_t const & p, vector<vector<int> > const & f, game_info_t const & ginfo, turn_info_t const & tinfo) {
     repeat (y,ginfo.height) {
         repeat (x,ginfo.width) {
@@ -234,4 +249,16 @@ next:;
         }
         cerr << endl;
     }
+}
+
+array<int,ENEMY_NUM> turns_to_next(turn_info_t const & tinfo) {
+    int turn = tinfo.turn % TURN_CYCLE;
+    int weapon = TURNS[turn];
+    array<int,ENEMY_NUM> turns = {};
+    for (int i = (turn + 1) % TURN_CYCLE; TURNS[i] != weapon; i = (i + 1) % TURN_CYCLE) {
+        if (FRIEND_NUM < TURNS[i]) {
+            turns[TURNS[i] - FRIEND_NUM] += 1;
+        }
+    }
+    return turns;
 }

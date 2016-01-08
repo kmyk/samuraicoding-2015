@@ -12,7 +12,8 @@ class player {
     turn_info_t tinfo;
     vector<vector<int> > field;
     array<vector<point_t>,ENEMY_NUM> eposs; // estimated positions of enemies
-    vector<vector<double> > is_dangerous;
+    array<vector<vector<set<int> > >,ENEMY_NUM> is_dangerous; // is_dangerous[enemy id][y][x] -> { eposs ixs }
+    array<int,ENEMY_NUM> eturns;
     default_random_engine engine;
 
     int weapon() const { return ginfo.weapon; }
@@ -24,6 +25,7 @@ class player {
 private:
     void update();
     void update_estimated_positions();
+    void update_is_dangerous();
     double evaluate(action_plan_t const & plan);
 
 public:
@@ -149,42 +151,42 @@ repeat (y,h()) {
     }
     cerr << endl;
 }
+
     }
 }
+
+void player::update_is_dangerous() {
+    repeat (i,ENEMY_NUM) {
+        is_dangerous[i].clear();
+        is_dangerous[i].resize(h(), vector<set<int> >(w()));
+        if (not eturns[i]) continue;
+        repeat (pi, eposs[i].size()) {
+            point_t p = eposs[i][pi];
+            int r = eturns[i]*2+1;
+            repeat (j,r*r) {
+                point_t dp = { j / r - eturns[i], j % r - eturns[i] };
+                repeat (k,DIRECTION_NUM) {
+                    repeat (l,ATTACK_AREA_NUM[i]) {
+                        point_t q = p + dp + rotdir(ATTACK_AREA[i][l], k);
+                        if (not is_on_field(q, ginfo)) continue;
+                        is_dangerous[i][q.y][q.x].insert(pi);
+                    }
+                }
+            }
+        }
+    }
+}
+
 void player::update() {
+    eturns = turns_to_next(tinfo);
     repeat (y,h()) {
         repeat (x,w()) {
             if (tinfo.field[y][x] == F_UNKNOWN) continue;
             field[y][x] = tinfo.field[y][x];
         }
     }
-
     update_estimated_positions();
-
-    is_dangerous.clear();
-    is_dangerous.resize(h(), vector<double>(w()));
-    repeat (i,ENEMY_NUM) {
-        vector<vector<bool> > f(h(), vector<bool>(w()));
-        if (tinfo.state[i] == S_ELIMINATED) continue;
-        for (point_t p : eposs[i]) {
-            repeat (j,DIRECTION_NUM + 1) {
-                repeat (k,DIRECTION_NUM) {
-                    repeat (l,ATTACK_AREA_NUM[i]) {
-                        point_t q = p + direction[j] + rotdir(ATTACK_AREA[i][l], k);
-                        if (not is_on_field(q, ginfo)) continue;
-                        f[q.y][q.x] = true;
-                    }
-                }
-            }
-        }
-        repeat (y,h()) {
-            repeat (x,w()) {
-                if (f[y][x]) {
-                    is_dangerous[y][x] += 1 / eposs[i].size();
-                }
-            }
-        }
-    }
+    update_is_dangerous();
 }
 
 action_plan_t player::play(turn_info_t const & a_tinfo) {
@@ -266,6 +268,7 @@ double player::evaluate(action_plan_t const & plan) {
     if (not is_valid_plan(plan, ginfo, tinfo)) return -1;
     double score = 0;
     vector<vector<int> > f = field;
+    array<set<int>,ENEMY_NUM> killed; // eposs ids
     point_t p = pos();
     for (int a : plan.a) {
         if (is_action_attack(a)) {
@@ -273,12 +276,13 @@ double player::evaluate(action_plan_t const & plan) {
                 point_t q = p + rotdir(ATTACK_AREA[weapon()][i], a - A_ATTACK);
                 if (not is_on_field(q, ginfo)) continue;
                 repeat (j,ENEMY_NUM) {
-                    for (point_t r : eposs[j]) {
-                        if (q == r) {
-                            if (r == ginfo.home[FRIEND_NUM + j]) {
+                    repeat (k,eposs[j].size()) {
+                        if (q == eposs[j][k]) {
+                            killed[j].insert(k);
+                            if (q == ginfo.home[FRIEND_NUM + j]) {
                                 score += 80 / eposs[j].size(); // may be curing
                             } else {
-                                score += 200000 / eposs[j].size();
+                                score += 100000 / eposs[j].size();
                             }
                         }
                     }
@@ -300,8 +304,12 @@ double player::evaluate(action_plan_t const & plan) {
     if (total_cost(plan) < 7 and is_field_friend(f[p.y][p.x])) {
         score += 30;
     }
-    if (is_dangerous[p.y][p.x] > eps) {
-        score -= 150000 * is_dangerous[p.y][p.x];
+    repeat (i,ENEMY_NUM) {
+        for (int j : is_dangerous[i][p.y][p.x]) {
+            if (not killed[i].count(j)) {
+                score -= 150000 / eposs[i].size();
+            }
+        }
     }
     return score;
 }
@@ -317,6 +325,7 @@ int main() {
     while (true) {
         clog << "# read turn info" << endl;
         turn_info_t tinfo = getturninfo(cin, ginfo);
+        if (not cin) break;
         clog << "# make a decision" << endl;
         action_plan_t plan = p.play(tinfo);
         // assert (is_valid_plan(plan, ginfo, tinfo));
