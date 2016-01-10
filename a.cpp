@@ -225,12 +225,12 @@ action_plan_t player::play(turn_info_t const & a_tinfo) {
     if (highscore < 170) {
         // there are no enough space, goto center (heuristic)
         double score[DIRECTION_NUM] = {};
-        repeat_from (dy,-7,7+1) repeat_from (dx,-7,7+1) {
+        repeat_from (dy,-8,8+1) repeat_from (dx,-8,8+1) {
             point_t p = pos() + (point_t){ dy, dx };
             if (not is_on_field(p, ginfo)) continue;
             if (not is_field_friend(field[p.y][p.x])) {
-                if (dy < 0) score[D_SOUTH] += 1;
-                if (dy > 0) score[D_NORTH] += 1;
+                if (dy < 0) score[D_NORTH] += 1;
+                if (dy > 0) score[D_SOUTH] += 1;
                 if (dx < 0) score[D_WEST] += 1;
                 if (dx > 0) score[D_EAST] += 1;
             }
@@ -331,7 +331,7 @@ int main() {
         if (not cin) break;
         clog << "# make a decision" << endl;
         action_plan_t plan = p.play(tinfo);
-        assert (is_valid_plan(plan, ginfo, tinfo));
+        // assert (is_valid_plan(plan, ginfo, tinfo));
         clog << "# done" << endl;
         cout << plan << endl;
         clog << plan << endl;
