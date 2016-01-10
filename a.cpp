@@ -307,6 +307,10 @@ double player::evaluate(action_plan_t const & plan) {
     if (total_cost(plan) < 7 and is_field_friend(f[p.y][p.x])) {
         score += 30;
     }
+    repeat (i,FRIEND_NUM) if (i != weapon()) {
+        int dist_diff = manhattan_distance(p, tinfo.pos[i]) - manhattan_distance(pos(), tinfo.pos[i]);
+        score += dist_diff * 8;
+    }
     repeat (i,ENEMY_NUM) {
         for (int j : is_dangerous[i][p.y][p.x]) {
             if (not killed[i].count(j)) {
