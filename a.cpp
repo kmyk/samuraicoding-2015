@@ -15,6 +15,7 @@ class player {
     array<vector<vector<set<int> > >,ENEMY_NUM> is_dangerous; // is_dangerous[enemy id][y][x] -> { eposs ixs }
     array<int,ENEMY_NUM> eturns;
     default_random_engine engine;
+    map<point_t,int> rhome; // reversed home
 
     int weapon() const { return ginfo.weapon; }
     int h() const { return ginfo.height; }
@@ -37,8 +38,8 @@ player::player(game_info_t const & ginfo) : ginfo(ginfo) {
     random_device device;
     engine.seed(device());
 
-    tinfo = {};
-    tinfo.turn = -1;
+    repeat (i,SAMURAI_NUM) rhome[ginfo.home[i]] = i;
+
     field.resize(h(), vector<int>(w(), F_UNKNOWN));
 }
 
@@ -190,8 +191,14 @@ void player::update() {
 }
 
 action_plan_t player::play(turn_info_t const & a_tinfo) {
-    if (tinfo.turn != -1) tinfos.push_back(tinfo);
+    if (a_tinfo.turn >= 6) tinfos.push_back(tinfo);
     tinfo = a_tinfo;
+    // > 自分の居館が存在する区画はゲーム開始時点ですでに自分により占領されており、ゲーム中に他のサムライによって占領されることはない。
+    // とあるが、tinfo.fieldには反映されていないので対応
+    repeat (i,SAMURAI_NUM) {
+        point_t p = ginfo.home[i];
+        tinfo.field[p.y][p.x] = F_OCCUPIED + i;
+    }
     update();
 
     debug_print(pos(), field, ginfo, tinfo);
@@ -283,13 +290,14 @@ double player::evaluate(action_plan_t const & plan) {
                         if (q == eposs[j][k]) {
                             killed[j].insert(k);
                             if (q == ginfo.home[FRIEND_NUM + j]) {
-                                score += 80 / eposs[j].size(); // may be curing
+                                score += 100 / eposs[j].size(); // may be curing
                             } else {
                                 score += 100000 / eposs[j].size();
                             }
                         }
                     }
                 }
+                if (rhome.count(q)) continue; // 自分の居館が存在する区画はゲーム開始時点ですでに自分により占領されており、ゲーム中に他のサムライによって占領されることはない。
                 int fq = f[q.y][q.x];
                 if (is_field_enemy(fq)) {
                     score += 100;
