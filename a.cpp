@@ -307,17 +307,17 @@ double player::evaluate(action_plan_t const & plan) {
                 repeat (j,ENEMY_NUM) {
                     repeat (k,eposs[j].size()) {
                         if (q == eposs[j][k]) {
+                            if (q == ginfo.home[FRIEND_NUM + j]) continue; // 居館上は無敵っぽい
                             killed[j].insert(k);
-                            if (q == ginfo.home[FRIEND_NUM + j]) {
-                                score += 85 / eposs[j].size(); // may be curing
-                            } else {
-                                score += 100000 / eposs[j].size();
-                            }
+                            score += 100000 / eposs[j].size();
                         }
                     }
                 }
                 // 居館の占領の可否と居館における隠伏の可否は独立のように見える
                 // if (rhome.count(q)) continue; // 自分の居館が存在する区画はゲーム開始時点ですでに自分により占領されており、ゲーム中に他のサムライによって占領されることはない。
+                // それでも居館への攻撃はあまりおいしくなさそう
+                repeat (i,ENEMY_NUM) if (ginfo.home[FRIEND_NUM + i] == q) score -= 30;
+
                 int fq = f[q.y][q.x];
                 if (is_field_enemy(fq)) {
                     score += 110;
