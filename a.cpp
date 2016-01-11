@@ -216,8 +216,8 @@ action_plan_t player::decide_plan() {
     if (tinfo.cure) return plan;
     if (state() == S_ELIMINATED) return plan;
 
-    // greedy
-    double highscore = 0;
+    action_plan_t greedy;
+    double highscore = - INFINITY;
     action_plan_t t;
     if (state() == S_HIDDEN) {
         t.a.push_back(A_APPEAR);
@@ -230,15 +230,17 @@ action_plan_t player::decide_plan() {
                 double score = evaluate(t);
                 if (highscore < score) {
                     highscore = score;
-                    plan = t;
+                    greedy = t;
                 }
                 t.a.pop_back();
             }
         }
         if (i < DIRECTION_NUM) t.a.pop_back();
     }
+    plan = greedy;
+
     cerr << "score: " << highscore << endl;
-    if (highscore < 170) {
+    if (highscore < 200) {
         // there are no enough space, goto center (heuristic)
         double score[DIRECTION_NUM] = {};
         repeat_from (dy,-8,8+1) repeat_from (dx,-8,8+1) {
@@ -259,22 +261,30 @@ action_plan_t player::decide_plan() {
                 j = i;
             }
         }
+
         plan.a.clear();
         plan.a.push_back(A_MOVE + j);
         plan.a.push_back(A_MOVE + j);
         plan.a.push_back(A_MOVE + j);
-        if (state() == S_HIDDEN) {
-            if (not is_valid_plan(plan, ginfo, tinfo)) {
-                plan.a.clear();
-                plan.a.push_back(A_APPEAR);
-                plan.a.push_back(A_MOVE + j);
-                plan.a.push_back(A_MOVE + j);
-                plan.a.push_back(A_MOVE + j);
-            }
+        if (state() == S_HIDDEN and not is_valid_plan(plan, ginfo, tinfo)) {
+            plan.a.clear();
+            plan.a.push_back(A_APPEAR);
+            plan.a.push_back(A_MOVE + j);
+            plan.a.push_back(A_MOVE + j);
+            plan.a.push_back(A_MOVE + j);
         }
         while (not is_valid_plan(plan, ginfo, tinfo)) {
             plan.a.pop_back();
         }
+
+        point_t p = pos() + total_move(plan);
+        bool dangerous = false;
+        repeat (i,ENEMY_NUM) {
+            for (int j : is_dangerous[i][p.y][p.x]) {
+                dangerous = true;
+            }
+        }
+        if (dangerous) plan = greedy; // revert
     }
     plan.a.push_back(A_HIDE);
     while (not is_valid_plan(plan, ginfo, tinfo)) {
@@ -299,7 +309,7 @@ double player::evaluate(action_plan_t const & plan) {
                         if (q == eposs[j][k]) {
                             killed[j].insert(k);
                             if (q == ginfo.home[FRIEND_NUM + j]) {
-                                score += 100 / eposs[j].size(); // may be curing
+                                score += 85 / eposs[j].size(); // may be curing
                             } else {
                                 score += 100000 / eposs[j].size();
                             }
@@ -310,9 +320,9 @@ double player::evaluate(action_plan_t const & plan) {
                 // if (rhome.count(q)) continue; // 自分の居館が存在する区画はゲーム開始時点ですでに自分により占領されており、ゲーム中に他のサムライによって占領されることはない。
                 int fq = f[q.y][q.x];
                 if (is_field_enemy(fq)) {
-                    score += 100;
+                    score += 110;
                 } else if (fq == F_FREE or fq == F_UNKNOWN) {
-                    score += 90;
+                    score += 100;
                 } if (is_field_friend(fq) and fq == F_OCCUPIED + weapon()) {
                     score += 1;
                 }
@@ -323,11 +333,11 @@ double player::evaluate(action_plan_t const & plan) {
         }
     }
     if (total_cost(plan) < 7 and is_field_friend(f[p.y][p.x])) {
-        score += 30;
+        score += 10;
     }
     repeat (i,FRIEND_NUM) if (i != weapon()) {
         int dist_diff = manhattan_distance(p, tinfo.pos[i]) - manhattan_distance(pos(), tinfo.pos[i]);
-        score += dist_diff * 8;
+        score += dist_diff * 5;
     }
     repeat (i,ENEMY_NUM) {
         for (int j : is_dangerous[i][p.y][p.x]) {
