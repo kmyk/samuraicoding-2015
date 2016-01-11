@@ -196,11 +196,12 @@ action_plan_t player::play(turn_info_t const & a_tinfo) {
     if (a_tinfo.turn >= 6) tinfos.push_back(tinfo);
     tinfo = a_tinfo;
     // > 自分の居館が存在する区画はゲーム開始時点ですでに自分により占領されており、ゲーム中に他のサムライによって占領されることはない。
-    // とあるが、tinfo.fieldには反映されていないので対応
-    repeat (i,SAMURAI_NUM) {
-        point_t p = ginfo.home[i];
-        tinfo.field[p.y][p.x] = F_OCCUPIED + i;
-    }
+    // arenaにおいても、自陣を再占領しないと隠伏できないので無効化
+    // // とあるが、tinfo.fieldには反映されていないので対応
+    // repeat (i,SAMURAI_NUM) {
+    //     point_t p = ginfo.home[i];
+    //     tinfo.field[p.y][p.x] = F_OCCUPIED + i;
+    // }
     update();
 
     debug_print(pos(), efield, ginfo, tinfo);
@@ -305,7 +306,8 @@ double player::evaluate(action_plan_t const & plan) {
                         }
                     }
                 }
-                if (rhome.count(q)) continue; // 自分の居館が存在する区画はゲーム開始時点ですでに自分により占領されており、ゲーム中に他のサムライによって占領されることはない。
+                // 居館の占領の可否と居館における隠伏の可否は独立のように見える
+                // if (rhome.count(q)) continue; // 自分の居館が存在する区画はゲーム開始時点ですでに自分により占領されており、ゲーム中に他のサムライによって占領されることはない。
                 int fq = f[q.y][q.x];
                 if (is_field_enemy(fq)) {
                     score += 100;

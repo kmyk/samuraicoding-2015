@@ -165,11 +165,12 @@ bool is_valid_plan(action_plan_t const & plan, game_info_t const & ginfo, turn_i
             repeat (i, ATTACK_AREA_NUM[ginfo.weapon]) {
                 point_t q = p + rotdir(ATTACK_AREA[ginfo.weapon][i], a - A_ATTACK);
                 if (not is_on_field(q, ginfo)) continue;
-                bool is_home = false;
-                repeat (j,SAMURAI_NUM) if (q == ginfo.home[j]) {
-                    is_home = true; break;
-                }
-                if (is_home) continue;
+                // 居館の占領の可否と居館における隠伏の可否は独立のように見える
+                // bool is_home = false;
+                // repeat (j,SAMURAI_NUM) if (q == ginfo.home[j]) {
+                //     is_home = true; break;
+                // }
+                // if (is_home) continue;
                 f[q.y][q.x] = F_OCCUPIED + ginfo.weapon;
             }
         } else if (is_action_move(a)) {
