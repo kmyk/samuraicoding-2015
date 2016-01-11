@@ -10,7 +10,8 @@ class player {
     game_info_t ginfo;
     vector<turn_info_t> tinfos;
     turn_info_t tinfo;
-    vector<vector<int> > field;
+    vector<vector<int> > pfield;
+    vector<vector<int> > efield;
     array<vector<point_t>,ENEMY_NUM> eposs; // estimated positions of enemies
     array<vector<vector<set<int> > >,ENEMY_NUM> is_dangerous; // is_dangerous[enemy id][y][x] -> { eposs ixs }
     array<int,ENEMY_NUM> eturns;
@@ -27,6 +28,7 @@ private:
     void update();
     void update_estimated_positions();
     void update_is_dangerous();
+    action_plan_t decide_plan();
     double evaluate(action_plan_t const & plan);
 
 public:
@@ -40,7 +42,7 @@ player::player(game_info_t const & ginfo) : ginfo(ginfo) {
 
     repeat (i,SAMURAI_NUM) rhome[ginfo.home[i]] = i;
 
-    field.resize(h(), vector<int>(w(), F_UNKNOWN));
+    efield.resize(h(), vector<int>(w(), F_UNKNOWN));
 }
 
 void player::update_estimated_positions() {
@@ -58,7 +60,7 @@ void player::update_estimated_positions() {
         repeat (y,h()) {
             repeat (x,w()) {
                 int cur = tinfo.field[y][x];
-                int prv = tinfos.back().field[y][x];
+                int prv = pfield[y][x];
                 if (cur == prv) continue;
                 if (cur == F_UNKNOWN) continue;
                 if (prv == F_UNKNOWN) continue;
@@ -81,8 +83,8 @@ void player::update_estimated_positions() {
                             point_t q = p + rotdir(ATTACK_AREA[i][k], j);
                             if (not is_on_field(q, ginfo)) continue;
                             if (tinfo.field[q.y][q.x] == F_UNKNOWN) continue;
-                            if (tinfos.back().field[q.y][q.x] == F_UNKNOWN) continue;
-                            if (tinfos.back().field[q.y][q.x] == F_OCCUPIED + FRIEND_NUM + i) continue;
+                            if (pfield[q.y][q.x] == F_UNKNOWN) continue;
+                            if (pfield[q.y][q.x] == F_OCCUPIED + FRIEND_NUM + i) continue;
                             poss.push_back(q);
                         }
                         sort(poss.begin(), poss.end());
@@ -101,7 +103,7 @@ void player::update_estimated_positions() {
                 // from hidden, appear -> attack -> hide
                 for (point_t apos : aposs[i]) {
                     if (is_field_enemy(tinfo.field[apos.y][apos.x]) and
-                            is_field_enemy(tinfos.back().field[apos.y][apos.x])) {
+                            is_field_enemy(pfield[apos.y][apos.x])) {
                         eposs[i].push_back(apos);
                     }
                 }
@@ -183,7 +185,7 @@ void player::update() {
     repeat (y,h()) {
         repeat (x,w()) {
             if (tinfo.field[y][x] == F_UNKNOWN) continue;
-            field[y][x] = tinfo.field[y][x];
+            efield[y][x] = tinfo.field[y][x];
         }
     }
     update_estimated_positions();
@@ -201,8 +203,14 @@ action_plan_t player::play(turn_info_t const & a_tinfo) {
     }
     update();
 
-    debug_print(pos(), field, ginfo, tinfo);
+    debug_print(pos(), efield, ginfo, tinfo);
 
+    action_plan_t plan = decide_plan();
+    pfield = simulate_plan(plan, tinfo.field, pos(), ginfo);
+    return plan;
+}
+
+action_plan_t player::decide_plan() {
     action_plan_t plan;
     if (tinfo.cure) return plan;
     if (state() == S_ELIMINATED) return plan;
@@ -235,7 +243,7 @@ action_plan_t player::play(turn_info_t const & a_tinfo) {
         repeat_from (dy,-8,8+1) repeat_from (dx,-8,8+1) {
             point_t p = pos() + (point_t){ dy, dx };
             if (not is_on_field(p, ginfo)) continue;
-            if (not is_field_friend(field[p.y][p.x])) {
+            if (not is_field_friend(efield[p.y][p.x])) {
                 if (dy < 0) score[D_NORTH] += 1;
                 if (dy > 0) score[D_SOUTH] += 1;
                 if (dx < 0) score[D_WEST] += 1;
@@ -277,7 +285,7 @@ action_plan_t player::play(turn_info_t const & a_tinfo) {
 double player::evaluate(action_plan_t const & plan) {
     if (not is_valid_plan(plan, ginfo, tinfo)) return -1;
     double score = 0;
-    vector<vector<int> > f = field;
+    vector<vector<int> > f = efield;
     array<set<int>,ENEMY_NUM> killed; // eposs ids
     point_t p = pos();
     for (int a : plan.a) {
