@@ -156,11 +156,22 @@ bool is_valid_plan(action_plan_t const & plan, game_info_t const & ginfo, turn_i
     if (not is_valid_plan(plan)) return false;
     point_t p = tinfo.pos[ginfo.weapon];
     int s = tinfo.state[ginfo.weapon];
+    vector<vector<int> > f = tinfo.field;
     if (s == S_ELIMINATED) return false;
     for (int a : plan.a) {
         if (is_action_attack(a)) {
             // 隠伏している間は占領行動をできない
             if (s == S_HIDDEN) return false;
+            repeat (i, ATTACK_AREA_NUM[ginfo.weapon]) {
+                point_t q = p + rotdir(ATTACK_AREA[ginfo.weapon][i], a - A_ATTACK);
+                if (not is_on_field(q, ginfo)) continue;
+                bool is_home = false;
+                repeat (j,SAMURAI_NUM) if (q == ginfo.home[j]) {
+                    is_home = true; break;
+                }
+                if (is_home) continue;
+                f[q.y][q.x] = F_OCCUPIED + ginfo.weapon;
+            }
         } else if (is_action_move(a)) {
             p += direction[a - A_MOVE];
             if (not is_on_field(p, ginfo)) return false;
@@ -171,7 +182,7 @@ bool is_valid_plan(action_plan_t const & plan, game_info_t const & ginfo, turn_i
                 }
             } else {
                 // 姿を隠しながら味方の領地以外の区画に移動することはできない
-                if (not is_field_friend(tinfo.field[p.y][p.x])) return false;
+                if (not is_field_friend(f[p.y][p.x])) return false;
             }
             repeat (i,SAMURAI_NUM) if (i != ginfo.weapon) {
                 // 他のサムライの居館の区画には移動できない
@@ -179,7 +190,7 @@ bool is_valid_plan(action_plan_t const & plan, game_info_t const & ginfo, turn_i
             }
         } else if (a == A_HIDE) {
             // 隠伏は味方の領地にいるときしかできない
-            if (not is_field_friend(tinfo.field[p.y][p.x])) return false;
+            if (not is_field_friend(f[p.y][p.x])) return false;
             // XXX: 隠伏中に隠伏は可能？
             if (s == S_HIDDEN) return false;
             s = S_HIDDEN;
