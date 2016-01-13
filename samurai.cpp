@@ -266,11 +266,11 @@ next:;
 array<int,ENEMY_NUM> turns_to_next(turn_info_t const & tinfo) {
     int turn = tinfo.turn % TURN_CYCLE;
     int weapon = TURNS[turn];
+    int side = weapon >= FRIEND_NUM;
     array<int,ENEMY_NUM> turns = {};
     for (int i = (turn + 1) % TURN_CYCLE; TURNS[i] != weapon; i = (i + 1) % TURN_CYCLE) {
-        if (FRIEND_NUM < TURNS[i]) {
-            turns[TURNS[i] - FRIEND_NUM] += 1;
-        }
+        if (side == 0 and FRIEND_NUM <= TURNS[i]) turns[TURNS[i] - FRIEND_NUM] += 1;
+        if (side == 1 and TURNS[i] <  FRIEND_NUM) turns[TURNS[i]] += 1;
     }
     return turns;
 }

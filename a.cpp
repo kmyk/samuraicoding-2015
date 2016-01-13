@@ -2,6 +2,17 @@
  * @file a.cpp
  * @author Kimiyuki Onaka
  * @date Tue. 05, 2016
+ * @todo
+ *     - 敵の位置推測
+ *         - 以前ターンでの推測結果の利用すべき
+ *     - 移動
+ *         - 斧持っているなら積極的に動くべき
+ *             - 塗り効率が3から5.3になる
+ *         - 開幕直後に3マス移動すべき
+ *         - 2手先ぐらいまで読むべき
+ *             - 特にある敵に対し2回行動できるとき
+ *     - コード
+ *         - 敵を倒す -> 塗る -> 大きく動く の3つに分けると綺麗になりそう
  */
 #include "samurai.hpp"
 using namespace std;
@@ -350,6 +361,15 @@ double player::evaluate(action_plan_t const & plan) {
 }
 
 int main() {
+    repeat (i, 34) {
+        turn_info_t tinfo = {};
+        tinfo.turn = i;
+        auto a = turns_to_next(tinfo);
+        cerr << i << " : ";
+        for (int it : a) cerr << it << ' ';
+        cerr  << endl;
+    }
+    return 0;
     game_info_t ginfo;
     clog << "# read game info" << endl;
     cin >> ginfo;
